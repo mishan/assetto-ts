@@ -1,0 +1,38 @@
+{
+  "name": "ac-spectator",
+  "version": "0.1.0",
+  "description": "Join an Assetto Corsa server as a car and receive what it sends, plus its UDP plugin feed: the game protocol in TypeScript.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/ac-spectator"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/ac-spectator#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "spectator",
+    "game-protocol",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}
