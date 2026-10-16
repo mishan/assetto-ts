@@ -4,7 +4,7 @@ name: Publish
 # no token is stored, and each release links back to the run that built it.
 on:
   push:
-    tags: ["acreplay@*", "ac-spectator@*", "ac-ai-line@*"]
+    tags: ["acreplay@*", "ac-spectator@*", "ac-ai-line@*", "acsm-race-control@*"]
 permissions:
   contents: read
   id-token: write
