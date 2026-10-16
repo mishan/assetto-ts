@@ -1,16 +1,23 @@
 name: Publish
 # A tag names the package and its version: acreplay@0.1.0 or ac-spectator@0.1.0.
+# npm trusts this workflow, in the npm environment, to publish both packages:
+# no token is stored, and each release links back to the run that built it.
 on:
   push:
     tags: ["acreplay@*", "ac-spectator@*"]
+permissions:
+  contents: read
+  id-token: write
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          # 24 for npm 11.5 or later, which trusted publishing needs.
+          node-version: "24"
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci
@@ -22,5 +29,3 @@ jobs:
           [ "$actual" = "$version" ] || { echo "packages/$name is $actual, not $version"; exit 1; }
           echo "PACKAGE=$name" >> "$GITHUB_ENV"
       - run: npm publish --workspace "packages/$PACKAGE" --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
