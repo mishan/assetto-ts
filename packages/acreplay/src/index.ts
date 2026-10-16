@@ -11,6 +11,8 @@ export {
   type WheelOffsets,
   writeReplay,
 } from "./acreplay.js"
+// Kept here for whoever imported them from acreplay before they were a package
+// of their own.
 export {
   acdKey,
   type CarFiles,
@@ -18,4 +20,4 @@ export {
   parseIni,
   readAcd,
   wheelsFromSuspension,
-} from "./cardata.js"
+} from "ac-cardata"

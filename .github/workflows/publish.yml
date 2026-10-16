@@ -4,7 +4,7 @@ name: Publish
 # no token is stored, and each release links back to the run that built it.
 on:
   push:
-    tags: ["acreplay@*", "ac-spectator@*", "ac-ai-line@*", "acsm-race-control@*"]
+    tags: ["acreplay@*", "ac-spectator@*", "ac-ai-line@*", "acsm-race-control@*", "ac-cardata@*"]
 permissions:
   contents: read
   id-token: write
@@ -21,7 +21,9 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci
-      - run: npm run typecheck && npm run lint && npm run format:check && npm test
+      # Built before publishing: a package's build reads the built output of
+      # the packages it depends on.
+      - run: npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
       - name: Check the tag matches the package's version
         run: |
           name="${GITHUB_REF_NAME%@*}"; version="${GITHUB_REF_NAME#*@}"

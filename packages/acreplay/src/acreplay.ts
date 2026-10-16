@@ -6,7 +6,7 @@
  * Built from published notes on the format, then checked against a 26-car
  * race replay the game itself wrote; what that settled is noted where it's
  * used. The network carries no wheel positions, so they come from each car's
- * own data (`cardata.ts`), or an R32's when a car's data can't be read.
+ * own data (`ac-cardata`), or an R32's when a car's data can't be read.
  * Still unmeasured:
  *
  * - **Sun angle, wing data and track objects,** written as zero and none,
@@ -18,9 +18,9 @@ import { finished } from "node:stream/promises"
 import { link, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { carWheels } from "./cardata.js"
+import { carWheels, type Vec3, type WheelOffsets } from "ac-cardata"
 
-export type Vec3 = [number, number, number]
+export type { Vec3, WheelOffsets }
 
 /** The status flag the game sets while a car's brake lights are on. */
 export const BRAKE_LIGHTS = 0x10
@@ -81,9 +81,6 @@ const FRAME_BYTES = 256
 const FRAME_HEADER_BYTES = 20
 /** Longer than any gap between two samples of a car that is still connected. */
 const MAX_GAP_MS = 1000
-
-/** Body-local wheel centers, meters: x across, y up, z forward. FL, FR, RL, RR. */
-export type WheelOffsets = [Vec3, Vec3, Vec3, Vec3]
 
 /** A Nissan R32's, measured from a replay the game wrote: x is the car's left. */
 export const DEFAULT_WHEEL_OFFSETS: WheelOffsets = [

@@ -3,7 +3,15 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { acdKey, carWheels, readAcd, wheelsFromSuspension } from "../src/cardata.js"
+import {
+  acdKey,
+  carDriverEyes,
+  carWheels,
+  driverEyes,
+  readAcd,
+  readCarFile,
+  wheelsFromSuspension,
+} from "../src/cardata.js"
 
 /** An archive as the game's tools write one: each byte shifted up by the key. */
 function pack(folder: string, files: Record<string, string>, marker = false): Buffer {
@@ -44,6 +52,15 @@ TRACK=1.584
 TYPE=DWB
 BASEY=-0.138
 TRACK=1.520
+`
+
+// An Abarth 500's own, with the offset its model is drawn at, which the eyes
+// are not: they are already in the model's frame.
+const ABARTH = `[BASIC]
+GRAPHICS_OFFSET=0,-0.56,0.038
+[GRAPHICS]
+DRIVEREYES=0.330737,1.19075,-0.490002
+ONBOARD_EXPOSURE=22
 `
 
 describe("acdKey", () => {
@@ -124,8 +141,12 @@ describe("carWheels", () => {
     await mkdir(join(cars, "packed"))
     await writeFile(
       join(cars, "packed", "data.acd"),
-      pack("packed", { "suspensions.ini": R32 }, true),
+      pack("packed", { "suspensions.ini": R32, "car.ini": ABARTH }, true),
     )
+    // Both: the folder is what the game reads, so it wins.
+    await mkdir(join(cars, "both", "data"), { recursive: true })
+    await writeFile(join(cars, "both", "data", "car.ini"), "[GRAPHICS]\nDRIVEREYES=0,1,2")
+    await writeFile(join(cars, "both", "data.acd"), pack("both", { "car.ini": ABARTH }))
   })
   afterAll(async () => {
     await rm(cars, { recursive: true, force: true })
@@ -138,5 +159,29 @@ describe("carWheels", () => {
 
   it("has nothing for a car it doesn't have", async () => {
     expect(await carWheels(cars, "missing")).toBeUndefined()
+  })
+
+  it("reads one file from the folder before the archive", async () => {
+    expect((await readCarFile(join(cars, "both"), "car.ini"))?.toString("latin1")).toContain(
+      "0,1,2",
+    )
+    expect((await readCarFile(join(cars, "packed"), "car.ini"))?.toString("latin1")).toBe(ABARTH)
+    expect(await readCarFile(join(cars, "packed"), "drivetrain.ini")).toBeUndefined()
+  })
+
+  it("finds the driver's eyes in a packed car", async () => {
+    expect(await carDriverEyes(cars, "packed")).toEqual([0.330737, 1.19075, -0.490002])
+    expect(await carDriverEyes(cars, "missing")).toBeUndefined()
+  })
+})
+
+describe("driverEyes", () => {
+  it("reads the cockpit camera from car.ini", () => {
+    expect(driverEyes(ABARTH)).toEqual([0.330737, 1.19075, -0.490002])
+  })
+
+  it("says what it found when it can't use it", () => {
+    expect(() => driverEyes("[GRAPHICS]\nDRIVEREYES=0.3,1.1")).toThrow(/DRIVEREYES: "0.3,1.1"/)
+    expect(() => driverEyes("[BASIC]\nTOTALMASS=1000")).toThrow(/no usable GRAPHICS.DRIVEREYES$/)
   })
 })
