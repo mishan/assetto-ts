@@ -19,7 +19,9 @@ npm install
 npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
 ```
 
-Node 22 or later. Each package is published on its own, from a tag naming it:
-`acreplay@0.1.0` or `ac-spectator@0.1.0`.
+Node 22 or later. Each package is published on its own by pushing a tag that
+names it, `acreplay@0.1.0` or `ac-spectator@0.1.0`, with the package's
+`version` bumped to match. npm trusts `.github/workflows/publish.yml` in the
+`npm` environment to publish them, so there's no token to keep.
 
 MIT licensed.
