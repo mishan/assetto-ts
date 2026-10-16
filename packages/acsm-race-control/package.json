@@ -1,0 +1,38 @@
+{
+  "name": "acsm-race-control",
+  "version": "0.1.0",
+  "description": "Assetto Server Manager's live timing feed: collisions, drivers joining and leaving, and the session, with no UDP plugin needed.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/acsm-race-control"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/acsm-race-control#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "acreplay",
+    "replay",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}

@@ -1,10 +1,10 @@
 name: Publish
-# A tag names the package and its version: acreplay@0.1.0 or ac-spectator@0.1.0.
-# npm trusts this workflow, in the npm environment, to publish both packages:
+# A tag names the package and its version, such as acreplay@0.1.0.
+# npm trusts this workflow, in the npm environment, to publish each package:
 # no token is stored, and each release links back to the run that built it.
 on:
   push:
-    tags: ["acreplay@*", "ac-spectator@*"]
+    tags: ["acreplay@*", "ac-spectator@*", "ac-ai-line@*", "acsm-race-control@*"]
 permissions:
   contents: read
   id-token: write
