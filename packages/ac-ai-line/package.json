@@ -1,0 +1,38 @@
+{
+  "name": "ac-ai-line",
+  "version": "0.1.0",
+  "description": "Read an Assetto Corsa track's AI line (ai/fast_lane.ai) and place any position on the lap: distance round, off the line, past the edge, which corner.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/ac-ai-line"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/ac-ai-line#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "acreplay",
+    "replay",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}
