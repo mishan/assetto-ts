@@ -1,15 +1,17 @@
 /**
- * A car's wheel positions from its own physics data, for placing wheels in a
- * replay: the network carries none.
- *
- * The data is `data/` beside the car, or packed into `data.acd`. Read-only and
- * in memory; nothing here writes an archive or keeps what it read.
+ * What a car's own data says about it: the files in its `data/` folder, or
+ * packed into `data.acd`, and the few numbers in them that place things on the
+ * car. Read-only and in memory; nothing here writes an archive or keeps what
+ * it read.
  */
 
 import { readFile } from "node:fs/promises"
 import { basename, join } from "node:path"
 
-import type { WheelOffsets } from "./acreplay.js"
+export type Vec3 = [number, number, number]
+
+/** Body-local wheel centers, meters: x across (the car's left), y up, z forward. FL, FR, RL, RR. */
+export type WheelOffsets = [Vec3, Vec3, Vec3, Vec3]
 
 /** The files inside a car's data archive, by name. */
 export type CarFiles = Map<string, Buffer>
@@ -137,17 +139,46 @@ export function wheelsFromSuspension(ini: string): WheelOffsets {
 }
 
 /**
+ * One file of a car's data, from `<carDir>/data/` when the car is unpacked and
+ * from its `data.acd` otherwise; undefined when it has neither or the file is
+ * not in them. The archive's key is the folder's name, so `carDir` has to be
+ * the car's own folder, named as the game names it.
+ */
+export async function readCarFile(carDir: string, name: string): Promise<Buffer | undefined> {
+  const unpacked = await readFile(join(carDir, "data", name)).catch(() => undefined)
+  if (unpacked !== undefined) return unpacked
+  const acd = await readFile(join(carDir, "data.acd")).catch(() => undefined)
+  return acd ? readAcd(acd, basename(carDir)).get(name) : undefined
+}
+
+/**
  * A car's wheel offsets from `<cars>/<model>`, unpacked `data/` first, then
  * `data.acd`; undefined when the car has neither or they can't be read.
  */
 export async function carWheels(carsDir: string, model: string): Promise<WheelOffsets | undefined> {
-  const dir = join(carsDir, model)
-  const unpacked = await readFile(join(dir, "data", "suspensions.ini"), "latin1").catch(
-    () => undefined,
-  )
-  if (unpacked !== undefined) return wheelsFromSuspension(unpacked)
-  const acd = await readFile(join(dir, "data.acd")).catch(() => undefined)
-  if (!acd) return undefined
-  const ini = readAcd(acd, basename(dir)).get("suspensions.ini")
+  const ini = await readCarFile(join(carsDir, model), "suspensions.ini")
   return ini ? wheelsFromSuspension(ini.toString("latin1")) : undefined
+}
+
+/**
+ * Where the driver's eyes are, from `car.ini`'s `[GRAPHICS] DRIVEREYES`: the
+ * cockpit camera's position, in the frame of the car's 3D model rather than of
+ * its physics, so `[BASIC] GRAPHICS_OFFSET` does not apply to it. +x is to the
+ * car's left, +y up, +z forward, as in the model.
+ */
+export function driverEyes(carIni: string): Vec3 {
+  const raw = parseIni(carIni).get("GRAPHICS")?.get("DRIVEREYES")
+  const v = (raw ?? "").split(",").map((n) => Number(n.trim()))
+  if (v.length !== 3 || !v.every(Number.isFinite)) {
+    throw new Error(
+      `car.ini has no usable GRAPHICS.DRIVEREYES${raw === undefined ? "" : `: ${JSON.stringify(raw)}`}`,
+    )
+  }
+  return [v[0]!, v[1]!, v[2]!]
+}
+
+/** A car's driver's eyes from `<cars>/<model>`; undefined when its data can't be read. */
+export async function carDriverEyes(carsDir: string, model: string): Promise<Vec3 | undefined> {
+  const ini = await readCarFile(join(carsDir, model), "car.ini")
+  return ini ? driverEyes(ini.toString("latin1")) : undefined
 }

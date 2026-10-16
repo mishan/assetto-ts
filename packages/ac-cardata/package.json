@@ -1,0 +1,38 @@
+{
+  "name": "ac-cardata",
+  "version": "0.1.0",
+  "description": "Read an Assetto Corsa car's own data: data.acd and data/, car.ini, and the numbers that place wheels and the driver's eyes.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/ac-cardata"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/ac-cardata#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "data.acd",
+    "car.ini",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}

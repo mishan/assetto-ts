@@ -18,7 +18,10 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "types": ["node"],
-    "noEmit": true
+    "noEmit": true,
+    // Typechecked and tested from source, so a clean checkout needs no build
+    // first; each package's own build reads the others' built output instead.
+    "paths": { "ac-cardata": ["./packages/ac-cardata/src/index.ts"] }
   },
   "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts"]
 }
