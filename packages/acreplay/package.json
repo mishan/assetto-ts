@@ -1,6 +1,6 @@
 {
   "name": "acreplay",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Write Assetto Corsa .acreplay files from car positions, with wheels placed from each car's own data.",
   "license": "MIT",
   "author": "Misha Nasledov <misha@nasledov.com>",
@@ -32,7 +32,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "ac-cardata": "^0.1.0"
+    "ac-cardata": "^0.1.2"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
