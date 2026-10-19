@@ -1,6 +1,6 @@
 {
   "name": "ac-cardata",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Read an Assetto Corsa car's own data: data.acd and data/, car.ini, and the numbers that place wheels and the driver's eyes.",
   "license": "MIT",
   "author": "Misha Nasledov <misha@nasledov.com>",
