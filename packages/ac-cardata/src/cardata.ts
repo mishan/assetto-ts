@@ -99,7 +99,14 @@ export function parseIni(text: string): Map<string, Map<string, string>> {
   const out = new Map<string, Map<string, string>>()
   let section = new Map<string, string>()
   for (const raw of text.split(/\r?\n/)) {
-    const line = raw.replace(/;.*$|\/\/.*$/, "").trim()
+    // Cut at the first comment marker by index: a regex for it backtracks
+    // quadratically on a long run of them that a stray \r keeps from matching.
+    let line = raw
+    for (const marker of [";", "//"]) {
+      const i = line.indexOf(marker)
+      if (i >= 0) line = line.slice(0, i)
+    }
+    line = line.trim()
     const head = /^\[(.+)\]$/.exec(line)
     if (head) {
       section = out.get(head[1]!) ?? new Map()

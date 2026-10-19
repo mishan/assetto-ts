@@ -8,6 +8,7 @@ import {
   carDriverEyes,
   carWheels,
   driverEyes,
+  parseIni,
   readAcd,
   readCarFile,
   wheelsFromSuspension,
@@ -62,6 +63,24 @@ GRAPHICS_OFFSET=0,-0.56,0.038
 DRIVEREYES=0.330737,1.19075,-0.490002
 ONBOARD_EXPOSURE=22
 `
+
+describe("parseIni", () => {
+  it("strips both kinds of comment", () => {
+    const ini = parseIni("[A]\nX=1 ; one\nY = 2 // two\n; Z=3\n[B]\nW=a;b//c")
+    expect([...ini].map(([k, v]) => [k, Object.fromEntries(v)])).toEqual([
+      ["A", { X: "1", Y: "2" }],
+      ["B", { W: "a" }],
+    ])
+  })
+
+  it.each([
+    ["semicolons", ";"],
+    ["slashes", "//"],
+  ])("reads a long run of %s in linear time", { timeout: 2000 }, (_, marker) => {
+    // Seconds to strip under a backtracking regex; a car's data is anyone's to write.
+    expect(parseIni(`${marker.repeat(100_000)}\r`).size).toBe(0)
+  })
+})
 
 describe("acdKey", () => {
   // Published by, and agreed between, two independent open-source readers.
