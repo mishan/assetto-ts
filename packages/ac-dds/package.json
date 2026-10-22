@@ -1,0 +1,43 @@
+{
+  "name": "ac-dds",
+  "version": "0.1.0",
+  "description": "Write DDS textures Assetto Corsa reads correctly, decode them to RGBA in Node or a browser, and check a texture for what the game would get wrong.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/ac-dds"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/ac-dds#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "dds",
+    "dxt",
+    "texture",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./decode": {
+      "types": "./dist/decode.d.ts",
+      "default": "./dist/decode.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}
