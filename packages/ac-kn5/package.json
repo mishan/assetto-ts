@@ -1,0 +1,38 @@
+{
+  "name": "ac-kn5",
+  "version": "0.1.0",
+  "description": "Read an Assetto Corsa car model (kn5): meshes, materials, textures and node transforms, plus the Custom Shaders Patch config that hides parts of it.",
+  "license": "MIT",
+  "author": "Misha Nasledov <misha@nasledov.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishan/assetto-ts.git",
+    "directory": "packages/ac-kn5"
+  },
+  "homepage": "https://github.com/mishan/assetto-ts/tree/main/packages/ac-kn5#readme",
+  "bugs": "https://github.com/mishan/assetto-ts/issues",
+  "keywords": [
+    "assetto-corsa",
+    "kn5",
+    "3d-model",
+    "sim-racing"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}
