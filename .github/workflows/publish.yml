@@ -30,4 +30,5 @@ jobs:
           actual=$(node -p "require('./packages/$name/package.json').version")
           [ "$actual" = "$version" ] || { echo "packages/$name is $actual, not $version"; exit 1; }
           echo "PACKAGE=$name" >> "$GITHUB_ENV"
-      - run: npm publish --workspace "packages/$PACKAGE" --access public
+      # Waits out npm's staged window on a package's first release; see the script.
+      - run: .github/scripts/publish.sh "packages/$PACKAGE"

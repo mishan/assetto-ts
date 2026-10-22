@@ -27,8 +27,19 @@ npm run typecheck && npm run lint && npm run format:check && npm test && npm run
 Node 22 or later. Each package is published on its own: bump its `version`,
 then push a tag naming the package and that version, such as `acreplay@0.1.1`.
 npm trusts `.github/workflows/publish.yml` in the `npm` environment to publish
-them, so there's no token to keep. A new package needs a placeholder published
-once and its trusted publisher set up on npmjs.com, and its tag pattern added
-to the workflow and to the `npm` environment.
+them, so there's no token to keep. A new package needs:
+
+1. A placeholder published to npm, which claims the name.
+2. Its trusted publisher set up on npmjs.com: repository `mishan/assetto-ts`,
+   workflow `publish.yml`, environment `npm`.
+3. Its tag pattern added to the workflow's `tags` and to the `npm`
+   environment's deployment tag rules:
+
+   ```sh
+   gh api -X POST repos/mishan/assetto-ts/environments/npm/deployment-branch-policies \
+     -f name='<pkg>@*' -f type=tag
+   ```
+4. Patience on its first release, which sits in npm's staging window for a few
+   minutes before it appears. The workflow waits for it.
 
 MIT licensed.
