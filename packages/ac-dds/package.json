@@ -1,6 +1,6 @@
 {
   "name": "ac-dds",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Write DDS textures Assetto Corsa reads correctly, decode them to RGBA in Node or a browser, and check a texture for what the game would get wrong.",
   "license": "MIT",
   "author": "Misha Nasledov <misha@nasledov.com>",

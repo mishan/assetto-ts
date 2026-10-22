@@ -75,6 +75,14 @@ describe("ddsProblems", () => {
     for (const p of ddsProblems(bytes)) expect(p.message).toMatch(/^[A-Z].*\.$/)
   })
 
+  it("reads a header claiming four billion mip levels in no time", () => {
+    // The count is the file's word, and a check run on files from anyone
+    // spent fifteen seconds walking levels a 4x4 texture cannot have.
+    const started = performance.now()
+    expect(codes(header(4, 4, { mips: 0xffffffff, data: 24 }))).toEqual([])
+    expect(performance.now() - started).toBeLessThan(100)
+  })
+
   it("counts at least one block per dimension at every level", () => {
     // 4x1 levels of a 4x16 DXT1 are still a whole block each, not a quarter.
     expect(codes(header(4, 16, { mips: 5, data: 4 * 8 + 2 * 8 + 8 + 8 + 8 }))).toEqual([])
