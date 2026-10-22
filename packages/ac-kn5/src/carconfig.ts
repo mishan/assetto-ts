@@ -89,7 +89,11 @@ export function hidePatterns(
 
   for (const raw of String(iniText).split(/\r?\n/)) {
     // `;` and `//` both comment in CSP configs, and a value can carry one.
-    const line = raw.replace(/\s*(;|\/\/).*$/, "").trim()
+    // Cut at the first marker rather than with one regex: `\s*(;|\/\/).*$`
+    // backtracks over every run of spaces, and a config is whatever the car's
+    // author shipped.
+    const cut = raw.search(/;|\/\//)
+    const line = (cut < 0 ? raw : raw.slice(0, cut)).trim()
     if (!line) continue
     const section = line.match(/^\[([^\]]+)\]/)
     if (section) {
@@ -98,10 +102,12 @@ export function hidePatterns(
       continue
     }
     if (!inReplacement) continue
-    const kv = line.match(/^([A-Za-z_][\w]*)\s*=\s*(.*)$/)
-    if (!kv) continue
-    const key = kv[1]!.toUpperCase()
-    const values = kv[2]!
+    const eq = line.indexOf("=")
+    const name = line.slice(0, Math.max(0, eq)).trim()
+    if (eq < 0 || !/^[A-Za-z_]\w*$/.test(name)) continue
+    const key = name.toUpperCase()
+    const values = line
+      .slice(eq + 1)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean)

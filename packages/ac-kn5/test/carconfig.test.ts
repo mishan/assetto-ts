@@ -47,6 +47,16 @@ describe("hidePatterns", () => {
     expect(hidePatterns(NSX_STYLE, "other_car.kn5")).toEqual(["NOT_THIS_ONE", "SPOTTER_?"])
     expect(hidePatterns("", "car.kn5")).toEqual([])
   })
+
+  it("reads a line of a hundred thousand spaces in linear time", () => {
+    // The config is whatever the car shipped. Regexes that backtracked over
+    // a run of spaces took this from milliseconds to minutes.
+    const pad = " ".repeat(100_000)
+    const ini = `[MODEL_REPLACEMENT_0]\nHIDE${pad}=${pad}PLATE${pad};${pad}\nA=${pad}\n;${";".repeat(100_000)}`
+    const started = performance.now()
+    expect(hidePatterns(ini, "car.kn5")).toEqual(["PLATE"])
+    expect(performance.now() - started).toBeLessThan(1000)
+  })
 })
 
 describe("hiddenMeshes", () => {
