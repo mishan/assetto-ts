@@ -8,6 +8,7 @@ Server Manager, as separate npm packages:
 | [`acreplay`](packages/acreplay) | Writes `.acreplay` files the game opens, from car positions, with each car's wheels placed from its own data. |
 | [`ac-spectator`](packages/ac-spectator) | Joins a server as a car and hands you everything it sends: positions, laps, sessions, chat. Also receives the server's UDP plugin feed, collisions included. |
 | [`ac-cardata`](packages/ac-cardata) | Reads a car's own data, its `data/` folder or `data.acd`: files, `car.ini`, the driver's eyes and the wheels' positions. |
+| [`ac-kn5`](packages/ac-kn5) | Reads a car's 3D model (`.kn5`): meshes, materials, textures, where each vertex lands on its texture, which way the car faces, and which meshes its Custom Shaders Patch config hides. |
 | [`ac-ai-line`](packages/ac-ai-line) | Reads a track's AI line (`fast_lane.ai`) and places any position on the lap: distance round, off the line, past the edge, which corner. |
 | [`acsm-race-control`](packages/acsm-race-control) | Assetto Server Manager's live timing feed: collisions, drivers joining and leaving, and the session, with no UDP plugin needed. |
 
