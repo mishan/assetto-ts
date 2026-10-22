@@ -68,7 +68,7 @@ export function ddsProblems(bytes: Uint8Array): DdsProblem[] {
     problems.push({
       code: "dx10",
       message:
-        "It has a DX10 header, which Assetto Corsa as a DX9 game silently ignores, so the surface is drawn without it, often plain white.",
+        "It has a DX10 header, which Assetto Corsa as a DX9 game silently ignores without Custom Shaders Patch, so there the surface is drawn without it, often plain white.",
     })
   }
   if (!isPowerOfTwo(width) || !isPowerOfTwo(height)) {
@@ -89,7 +89,9 @@ export function ddsProblems(bytes: Uint8Array): DdsProblem[] {
   const block = fourCC ? BLOCK_BYTES[fourCC] : undefined
   if (block) {
     let need = 128
-    for (let l = 0, w = width, h = height; l < levels; l++) {
+    // Past the 1x1 level there is nothing more a texture can hold, and the
+    // count is the file's word: four billion of them took fifteen seconds.
+    for (let l = 0, w = width, h = height; l < Math.min(levels, needed); l++) {
       need += Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * block
       w = Math.max(1, w >> 1)
       h = Math.max(1, h >> 1)
