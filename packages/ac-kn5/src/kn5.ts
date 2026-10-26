@@ -354,7 +354,14 @@ export function parseKn5Buffer(
   }
 
   const model: Kn5Model = { version, textures, materials, meshes, dummies, buf, encrypted }
-  for (const mesh of meshes) placeOnSheet(model, mesh)
+  for (const mesh of meshes) {
+    const { uvShift, straddlers } = placeOnSheet(mesh.vertexCount, triangles(model, mesh), (i) => {
+      const o = mesh.vertexStart + i * mesh.stride
+      return [buf.readFloatLE(o + 24), 1 + buf.readFloatLE(o + 28)]
+    })
+    if (uvShift) mesh.uvShift = uvShift
+    if (straddlers.length) mesh.straddlers = straddlers
+  }
   return model
 }
 
@@ -382,7 +389,9 @@ const SHEET_EDGE = (SHEET_SPAN - 1) / 2
 
 /**
  * Bring each UV island that sits wholly on another copy of the sheet back onto
- * the copy in [0, 1], by recording a whole-number shift that `vertex()` applies.
+ * the copy in [0, 1], as a whole-number shift per vertex. `parseKn5Buffer`
+ * records it on each mesh for `vertex()` to apply; it is exported so a reader
+ * of another format places a model on the sheet exactly as a kn5 is placed.
  *
  * Textures are sampled with wrap addressing, so an unwrap shifted by whole
  * sheets draws exactly as one that is not, and exporters shift them freely: the
@@ -403,10 +412,16 @@ const SHEET_EDGE = (SHEET_SPAN - 1) / 2
  *
  * An island here is triangles joined through shared vertex indices within one
  * mesh, so a moved island moves whole and a seam in the unwrap is still a seam.
+ *
+ * `uvAt(i)` gives vertex i's [u, v], with v measured up the image as the sheet
+ * copies are counted. Returns `uvShift`, two numbers per vertex or null when
+ * nothing moves, and `straddlers`.
  */
-function placeOnSheet(model: Kn5Model, mesh: Kn5Mesh): void {
-  const n = mesh.vertexCount
-  if (!n) return
+export function placeOnSheet(
+  n: number,
+  tris: Iterable<[number, number, number]>,
+  uvAt: (i: number) => [number, number],
+): { uvShift: Float32Array | null; straddlers: number[] } {
   const parent = new Int32Array(n)
   for (let i = 0; i < n; i++) parent[i] = i
   const find = (x: number): number => {
@@ -422,7 +437,7 @@ function placeOnSheet(model: Kn5Model, mesh: Kn5Mesh): void {
     const rb = find(b)
     if (ra !== rb) parent[rb] = ra
   }
-  for (const [a, b, c] of triangles(model, mesh)) {
+  for (const [a, b, c] of tris) {
     union(a, b)
     union(b, c)
   }
@@ -430,9 +445,7 @@ function placeOnSheet(model: Kn5Model, mesh: Kn5Mesh): void {
   const bounds = new Map<number, [number, number, number, number]>()
   const size = new Map<number, number>()
   for (let i = 0; i < n; i++) {
-    const o = mesh.vertexStart + i * mesh.stride
-    const u = model.buf.readFloatLE(o + 24)
-    const v = 1 + model.buf.readFloatLE(o + 28)
+    const [u, v] = uvAt(i)
     const r = find(i)
     size.set(r, (size.get(r) ?? 0) + 1)
     const b = bounds.get(r)
@@ -485,8 +498,7 @@ function placeOnSheet(model: Kn5Model, mesh: Kn5Mesh): void {
     if (ku === 0 && kv === 0) continue
     moves.set(r, [-ku, -kv])
   }
-  if (straddlers.length) mesh.straddlers = straddlers
-  if (!moves.size) return
+  if (!moves.size) return { uvShift: null, straddlers }
 
   const shift = new Float32Array(2 * n)
   for (let i = 0; i < n; i++) {
@@ -496,7 +508,7 @@ function placeOnSheet(model: Kn5Model, mesh: Kn5Mesh): void {
       shift[2 * i + 1] = m[1]
     }
   }
-  mesh.uvShift = shift
+  return { uvShift: shift, straddlers }
 }
 
 const ENC_MARKER = "__AC_SHADERS_PATCH_KN5ENC_v1__"

@@ -1,6 +1,6 @@
 {
   "name": "ac-kn5",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read an Assetto Corsa car model (kn5): meshes, materials, textures and node transforms, plus the Custom Shaders Patch config that hides parts of it.",
   "license": "MIT",
   "author": "Misha Nasledov <misha@nasledov.com>",
