@@ -34,6 +34,7 @@ export {
   motionBlurOnly,
   parseKn5,
   parseKn5Buffer,
+  placeOnSheet,
   SHEET_SPAN,
   trailingEncryption,
   triangles,

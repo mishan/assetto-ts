@@ -14,6 +14,7 @@ import {
   motionBlurMesh,
   motionBlurOnly,
   parseKn5Buffer,
+  placeOnSheet,
   trustworthyDiffuse,
   vertex,
 } from "../src/kn5.js"
@@ -158,6 +159,30 @@ describe("islands on another copy of the sheet", () => {
     expect(mesh("STRADDLE").straddlers, "and is counted, by its vertices").toEqual([49])
     expect(mesh("TILING").straddlers, "a tiling island is not a straddler").toBeUndefined()
     expect(mesh("body_mesh").uvShift, "nothing to move reads exactly as stored").toBeUndefined()
+  })
+
+  it("places any format's vertices by the same rule", () => {
+    // Two triangles a sheet below [0, 1], and one straddling u = 1.
+    const uvs: [number, number][] = [
+      [0.1, -0.9],
+      [0.2, -0.9],
+      [0.2, -0.8],
+      [0.1, -0.8],
+      [0.9, 0.5],
+      [1.1, 0.5],
+      [1.1, 0.6],
+    ]
+    const { uvShift, straddlers } = placeOnSheet(
+      uvs.length,
+      [
+        [0, 1, 2],
+        [0, 2, 3],
+        [4, 5, 6],
+      ],
+      (i) => uvs[i]!,
+    )
+    expect(Array.from(uvShift!)).toEqual([0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0])
+    expect(straddlers).toEqual([3])
   })
 })
 
