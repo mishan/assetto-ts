@@ -11,7 +11,12 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
-import { kickReason, SpectatorClient } from "../src/client.js"
+import {
+  type CloseDetail,
+  kickReason,
+  SpectatorClient,
+  type SpectatorOptions,
+} from "../src/client.js"
 import { type FakeAcServer, fakeAcRoot, fakeAcServer } from "./support/fake-ac-server.js"
 
 let acRoot: string
@@ -36,8 +41,8 @@ const identity = {
   password: "",
 }
 
-function client(port: number, o: { host?: string; acRoot?: string } = {}): SpectatorClient {
-  return new SpectatorClient({
+function options(port: number, o: { host?: string; acRoot?: string } = {}): SpectatorOptions {
+  return {
     host: o.host ?? "127.0.0.1",
     port,
     acRoot: o.acRoot ?? acRoot,
@@ -45,7 +50,11 @@ function client(port: number, o: { host?: string; acRoot?: string } = {}): Spect
     pose: () => ({ pos: [0, 0, 0], rot: [0, 0, 0], vel: [0, 0, 0] }),
     onPacket: () => {},
     onClose: () => {},
-  })
+  }
+}
+
+function client(port: number, o: { host?: string; acRoot?: string } = {}): SpectatorClient {
+  return new SpectatorClient(options(port, o))
 }
 
 describe("SpectatorClient", () => {
@@ -93,6 +102,101 @@ describe("SpectatorClient", () => {
     await expect(client(server.port, { acRoot: "/" }).connect()).rejects.toThrow(
       /imola.*which is not under/,
     )
+  })
+
+  it("answers checksums from the files option when one is given", async () => {
+    const empty = await mkdtemp(join(tmpdir(), "acroot-empty-"))
+    const asked: string[] = []
+    const c = new SpectatorClient({
+      ...options(server.port),
+      acRoot: empty,
+      files: async (path) => {
+        asked.push(path)
+        return Buffer.from("x")
+      },
+    })
+    try {
+      await c.connect()
+      c.close()
+    } finally {
+      await rm(empty, { recursive: true, force: true })
+    }
+    expect(asked).toEqual([
+      "system/data/surfaces.ini",
+      "content/tracks/imola/data/surfaces.ini",
+      "content/tracks/imola/models.ini",
+      `content/cars/${identity.car}/data.acd`,
+    ])
+  })
+
+  it("names the file the files option didn't have", async () => {
+    const c = new SpectatorClient({
+      ...options(server.port),
+      files: async (path) => (path.endsWith("models.ini") ? undefined : Buffer.from("x")),
+    })
+    await expect(c.connect()).rejects.toThrow(/content\/tracks\/imola\/models\.ini/)
+  })
+
+  it("hands the files option each path normalized", async () => {
+    await server.close()
+    server = await fakeAcServer({ checksumPath: "system/../system/x/s.ini" })
+    const asked: string[] = []
+    const c = new SpectatorClient({
+      ...options(server.port),
+      files: async (path) => {
+        asked.push(path)
+        return Buffer.from("x")
+      },
+    })
+    await c.connect()
+    c.close()
+    expect(asked[0]).toBe("system/x/s.ini")
+  })
+
+  it.each([
+    ["rejects", async () => Promise.reject(new Error("ECONNRESET"))],
+    [
+      "throws before returning a promise",
+      () => {
+        throw new Error("ECONNRESET")
+      },
+    ],
+  ])("names the file when the files option %s", async (_, fail) => {
+    const c = new SpectatorClient({
+      ...options(server.port),
+      files: (path) => (path.endsWith("models.ini") ? fail() : Promise.resolve(Buffer.from("x"))),
+    })
+    await expect(c.connect()).rejects.toThrow(
+      "the files option failed on content/tracks/imola/models.ini: ECONNRESET",
+    )
+  })
+
+  it("never asks the files option for a path outside the AC root", async () => {
+    await server.close()
+    server = await fakeAcServer({ checksumPath: "../../../../../etc/hosts" })
+    const asked: string[] = []
+    const c = new SpectatorClient({
+      ...options(server.port),
+      files: async (path) => {
+        asked.push(path)
+        return Buffer.from("x")
+      },
+    })
+    await expect(c.connect()).rejects.toThrow(/outside the AC root/)
+    expect(asked).toEqual([])
+  })
+
+  it("tells onClose the kick's reason byte", async () => {
+    let close: ((reason: string, detail: CloseDetail) => void) | undefined
+    const closed = new Promise<[string, CloseDetail]>((resolve) => {
+      close = (reason, detail) => resolve([reason, detail])
+    })
+    const c = new SpectatorClient({ ...options(server.port), onClose: (r, d) => close?.(r, d) })
+    const { carId } = await c.connect()
+    server.sendTcp(Buffer.from([0x68, carId, 3]))
+    const [reason, detail] = await closed
+    expect(detail).toEqual({ kick: 3 })
+    expect(reason).toMatch(/checksum didn't match/)
   })
 
   it("gives up on a server that stops talking without closing the connection", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "ac-spectator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Join an Assetto Corsa server as a car and receive what it sends, plus its UDP plugin feed: the game protocol in TypeScript.",
   "license": "MIT",
   "author": "Misha Nasledov <misha@nasledov.com>",
