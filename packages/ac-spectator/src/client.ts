@@ -39,13 +39,19 @@ export interface SpectatorOptions {
   /** Assetto Corsa install root, for the files the server asks to checksum. */
   acRoot: string
   /**
+   * Reads a file the server asks to checksum, by its path under `acRoot`, in
+   * place of reading it from disk; undefined when there is none. For a caller
+   * that keeps those files somewhere else, or fetches the ones it lacks.
+   */
+  files?: ((path: string) => Promise<Uint8Array | undefined>) | undefined
+  /**
    * Where the car is, asked once per tick. Required, because every other
    * client draws this car as something solid: the world origin is on the
    * racing surface at plenty of tracks.
    */
   pose: (now: number) => Pose
   onPacket: (packet: ServerPacket, receivedAt: number) => void
-  onClose?: (reason: string) => void
+  onClose?: (reason: string, detail: CloseDetail) => void
   /** This client's millisecond clock; the server converts car timestamps into it. */
   now?: () => number
   /** How long the server may say nothing before it counts as gone. */
@@ -55,6 +61,11 @@ export interface SpectatorOptions {
 /** A parked spectator needs the first three; a scripted test car uses the rest. */
 export type Pose = Pick<OwnPosition, "pos" | "rot" | "vel"> &
   Partial<Pick<OwnPosition, "rpm" | "gear" | "steer" | "gas" | "statusFlags">>
+
+export interface CloseDetail {
+  /** The KickCar reason byte, when the server removed this car. */
+  kick?: number
+}
 
 export class SpectatorError extends Error {}
 
@@ -259,37 +270,51 @@ export class SpectatorClient {
       this.#shutdown(`onPacket threw: ${e instanceof Error ? e.message : String(e)}`)
       return
     }
-    if (p.kind === "kick" && p.carId === this.session?.carId) this.#shutdown(kickReason(p.reason))
+    if (p.kind === "kick" && p.carId === this.session?.carId) {
+      this.#shutdown(kickReason(p.reason), { kick: p.reason })
+    }
   }
 
   async #checksums(session: HandshakeOk): Promise<Buffer[]> {
-    const md5 = (b: Buffer): Buffer => createHash("md5").update(b).digest()
+    const md5 = (b: Uint8Array): Buffer => createHash("md5").update(b).digest()
     const out: Buffer[] = []
     const root = resolvePath(this.#opts.acRoot)
+    const files = this.#opts.files
+    const read = async (path: string): Promise<Uint8Array | undefined> => {
+      if (!files) return readFile(join(root, path)).catch(() => undefined)
+      return files(path).catch((e: unknown) => {
+        const why = e instanceof Error ? e.message : String(e)
+        throw new SpectatorError(`the files option failed on ${path}: ${why}`)
+      })
+    }
     // The server names the files; it doesn't get to learn about any outside
-    // the AC root.
-    const inside = (path: string): boolean => {
+    // the AC root. Inside, the path is normalized with forward slashes, so a
+    // files option sees one spelling of each file on every OS.
+    const inside = (path: string): string | undefined => {
       const rel = relative(root, resolvePath(root, path))
-      return !(rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel))
+      if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return undefined
+      return rel.split(sep).join("/")
     }
     for (const path of session.checksumPaths) {
-      if (!inside(path)) {
+      const rel = inside(path)
+      if (rel === undefined) {
         throw new SpectatorError(`the server wants a checksum of ${path}, outside the AC root`)
       }
       // A missing file would be hashed as something, fail the check, and get
       // the car kicked a few seconds later with nothing to say why.
-      const bytes = await readFile(join(root, path)).catch(() => {
+      const bytes = await read(rel)
+      if (!bytes) {
         throw new SpectatorError(
-          `the server wants a checksum of ${path}, which is not under ${this.#opts.acRoot}`,
+          this.#opts.files
+            ? `the server wants a checksum of ${path}, which the files option doesn't have`
+            : `the server wants a checksum of ${path}, which is not under ${this.#opts.acRoot}`,
         )
-      })
+      }
       out.push(md5(bytes))
     }
     // The car's own data.acd. A server without one accepts anything here.
-    const acdPath = join("content/cars", session.car, "data.acd")
-    const acd = inside(acdPath)
-      ? await readFile(join(root, acdPath)).catch(() => undefined)
-      : undefined
+    const acdPath = inside(`content/cars/${session.car}/data.acd`)
+    const acd = acdPath === undefined ? undefined : await read(acdPath)
     out.push(acd ? md5(acd) : Buffer.alloc(16))
     return out
   }
@@ -315,7 +340,7 @@ export class SpectatorClient {
     })
   }
 
-  #shutdown(reason: string): void {
+  #shutdown(reason: string, detail: CloseDetail = {}): void {
     if (this.#closed) return
     this.#closed = true
     clearInterval(this.#timer)
@@ -325,7 +350,7 @@ export class SpectatorClient {
     tcp?.end()
     // end() waits for the other side, which may be gone.
     setTimeout(() => tcp?.destroy(), 1000).unref()
-    this.#opts.onClose?.(reason)
+    this.#opts.onClose?.(reason, detail)
   }
 }
 

@@ -27,9 +27,15 @@ What joining takes:
   join with, as for any driver.
 - **The files the server checksums:** `acRoot` laid out as an install, with at
   least `system/data/surfaces.ini`, the track's files and the car's
-  `data.acd`. A copy of those is enough; the game needn't be installed.
+  `data.acd`. A copy of those is enough; the game needn't be installed. To
+  keep them elsewhere, pass `files`: it's asked for each file by its path
+  under `acRoot`, which still bounds what the server may name. A car with no
+  `data.acd` is answered with zeros, as the game does.
 - **A pose each tick:** every client draws this car, so park it somewhere out
   of sight rather than at the origin, which is on the track at many circuits.
+
+`onClose(reason, detail)` says why the connection ended; `detail.kick` is the
+server's reason byte when it removed the car (3 is a checksum mismatch).
 
 `PluginListener` receives the server's UDP plugin feed: car updates with their
 spline position, collisions with the contact point, lap times and session
