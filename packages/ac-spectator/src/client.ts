@@ -282,10 +282,12 @@ export class SpectatorClient {
     const files = this.#opts.files
     const read = async (path: string): Promise<Uint8Array | undefined> => {
       if (!files) return readFile(join(root, path)).catch(() => undefined)
-      return files(path).catch((e: unknown) => {
+      try {
+        return await files(path)
+      } catch (e) {
         const why = e instanceof Error ? e.message : String(e)
         throw new SpectatorError(`the files option failed on ${path}: ${why}`)
-      })
+      }
     }
     // The server names the files; it doesn't get to learn about any outside
     // the AC root. Inside, the path is normalized with forward slashes, so a

@@ -153,13 +153,18 @@ describe("SpectatorClient", () => {
     expect(asked[0]).toBe("system/x/s.ini")
   })
 
-  it("names the file the files option failed on", async () => {
+  it.each([
+    ["rejects", async () => Promise.reject(new Error("ECONNRESET"))],
+    [
+      "throws before returning a promise",
+      () => {
+        throw new Error("ECONNRESET")
+      },
+    ],
+  ])("names the file when the files option %s", async (_, fail) => {
     const c = new SpectatorClient({
       ...options(server.port),
-      files: async (path) => {
-        if (path.endsWith("models.ini")) throw new Error("ECONNRESET")
-        return Buffer.from("x")
-      },
+      files: (path) => (path.endsWith("models.ini") ? fail() : Promise.resolve(Buffer.from("x"))),
     })
     await expect(c.connect()).rejects.toThrow(
       "the files option failed on content/tracks/imola/models.ini: ECONNRESET",
